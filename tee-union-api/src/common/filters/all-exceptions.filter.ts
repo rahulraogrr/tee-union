@@ -27,7 +27,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal server error';
 
-    const logMessage = `${request.method} ${request.url} → ${status}`;
+    const requestId = (request as any).id ?? '-';
+    const logMessage = `[${requestId}] ${request.method} ${request.url} → ${status}`;
+
     if (status >= 500) {
       this.logger.error(
         logMessage,
@@ -41,6 +43,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
+      requestId,
       message,
     });
   }

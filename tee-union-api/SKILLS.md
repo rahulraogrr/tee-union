@@ -13,14 +13,19 @@
 4. [Authentication & Authorisation](#4-authentication--authorisation)
 5. [Module Anatomy](#5-module-anatomy)
 6. [Notification System](#6-notification-system)
-7. [Logging Conventions](#7-logging-conventions)
-8. [Swagger / OpenAPI](#8-swagger--openapi)
-9. [DTOs & Validation](#9-dtos--validation)
-10. [Testing Strategy](#10-testing-strategy)
-11. [Environment Variables](#11-environment-variables)
-12. [Docker / Local Dev Setup](#12-docker--local-dev-setup)
-13. [Adding a New Feature Module](#13-adding-a-new-feature-module)
-14. [Common Gotchas](#14-common-gotchas)
+7. [Push Token Registration](#7-push-token-registration)
+8. [Rate Limiting](#8-rate-limiting)
+9. [Health Checks](#9-health-checks)
+10. [Security Hardening](#10-security-hardening)
+11. [Logging Conventions](#11-logging-conventions)
+12. [Swagger / OpenAPI](#12-swagger--openapi)
+13. [DTOs & Validation](#13-dtos--validation)
+14. [Pagination](#14-pagination)
+15. [Testing Strategy](#15-testing-strategy)
+16. [Environment Variables](#16-environment-variables)
+17. [Docker / Local Dev Setup](#17-docker--local-dev-setup)
+18. [Adding a New Feature Module](#18-adding-a-new-feature-module)
+19. [Common Gotchas](#19-common-gotchas)
 
 ---
 
@@ -277,7 +282,162 @@ The app starts and functions normally without any of them.
 
 ---
 
-## 7. Logging Conventions
+## 7. Push Token Registration
+
+FCM push notifications require the mobile app to store its device token in the API.
+Without this the `pushTokens` relation is always empty and FCM silently sends nothing.
+
+### Endpoints (`/api/v1/push-tokens`)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/push-tokens` | Register a new FCM token (idempotent) |
+| `DELETE` | `/push-tokens` | Remove a specific token (logout from one device) |
+| `DELETE` | `/push-tokens/all` | Remove all tokens (logout from all devices) |
+
+### Mobile app integration
+
+```typescript
+// Call this after Firebase.messaging().getToken() resolves
+await api.post('/push-tokens', {
+  token: fcmToken,   // string from Firebase SDK
+  platform: 'android' | 'ios',
+});
+
+// Call this on logout
+await api.delete('/push-tokens', { data: { token: fcmToken } });
+```
+
+Re-registering the same token is safe — it's an idempotent `findFirst + update/create`.
+
+---
+
+## 8. Rate Limiting
+
+Rate limiting is applied globally via `@nestjs/throttler` (registered in `AppModule`).
+
+### Defaults
+
+| Scope | Limit | Window |
+|---|---|---|
+| Global (all endpoints) | 60 requests | 60 seconds per IP |
+| `POST /auth/login` | **5 requests** | **15 minutes per IP** |
+
+The login endpoint uses a much tighter limit to prevent brute-force PIN attacks.
+
+### Overriding limits on a specific endpoint
+
+```typescript
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
+
+// Tighter — 10 req / 60s
+@Throttle({ default: { ttl: 60_000, limit: 10 } })
+@Post('sensitive')
+sensitiveAction() { … }
+
+// Exempt — health checks, webhooks
+@SkipThrottle()
+@Get('health')
+health() { … }
+```
+
+Clients that exceed the limit receive **HTTP 429 Too Many Requests**.
+
+---
+
+## 9. Health Checks
+
+Two probes are exposed at `/api/v1/health` — both are **public** (no JWT) and **exempt from rate limiting**.
+
+| Endpoint | Purpose | Checks |
+|---|---|---|
+| `GET /health/live` | Kubernetes liveness | Process alive + heap < 512 MB |
+| `GET /health/ready` | Kubernetes readiness / load balancer | Database reachable (SELECT 1) |
+
+### Example response (healthy)
+
+```json
+{
+  "status": "ok",
+  "info": { "database": { "status": "up" } },
+  "error": {},
+  "details": { "database": { "status": "up" } }
+}
+```
+
+### Example response (unhealthy — 503)
+
+```json
+{
+  "status": "error",
+  "info": {},
+  "error": { "database": { "status": "down", "message": "Connection refused" } },
+  "details": { "database": { "status": "down", "message": "Connection refused" } }
+}
+```
+
+### Dockerfile HEALTHCHECK
+
+The production `Dockerfile` wires the readiness probe into Docker's built-in health check:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:3000/api/v1/health/ready || exit 1
+```
+
+---
+
+## 10. Security Hardening
+
+### Helmet (HTTP security headers)
+
+Applied via `app.use(helmet({ … }))` in `main.ts`. Sets:
+
+- `X-Frame-Options: SAMEORIGIN` — prevents clickjacking
+- `X-Content-Type-Options: nosniff` — prevents MIME sniffing
+- `Strict-Transport-Security` — enforces HTTPS
+- `X-DNS-Prefetch-Control: off`
+- Content-Security-Policy (enabled in production, disabled in development so Swagger UI works)
+
+### Response compression
+
+`compression` middleware is applied early in the pipeline. Compresses responses > 1 KB using gzip/deflate based on the `Accept-Encoding` request header.
+
+### Graceful shutdown
+
+`app.enableShutdownHooks()` in `main.ts` ensures that when the process receives `SIGTERM` (e.g. from Kubernetes), NestJS runs all `OnModuleDestroy` hooks before exiting:
+
+- Prisma disconnects cleanly (`$disconnect()`)
+- Bull queues drain in-progress jobs
+- No in-flight requests are dropped
+
+### Environment variable validation
+
+`ConfigModule` in `AppModule` uses a **Joi schema** to validate every required environment variable at startup. If `JWT_SECRET` is missing or too short (< 32 chars), the process exits immediately with a clear error — no silent auth failures at runtime.
+
+### CORS in production
+
+Set `CORS_ORIGINS` to a comma-separated list of allowed origins:
+
+```bash
+CORS_ORIGINS=https://app.tee1104.org,exp://192.168.1.10:8081
+```
+
+The API also exposes and accepts the `X-Request-Id` header via CORS so mobile clients can send their own correlation IDs.
+
+### Request correlation IDs
+
+Every request is assigned a unique `X-Request-Id` (UUID v4) by `RequestIdMiddleware`.
+
+- If the client sends `X-Request-Id: <value>`, that value is used (e.g. from an API gateway).
+- Otherwise a new UUID is generated.
+- The ID appears in every log line: `[a1b2c3d4] GET /api/v1/tickets 200 — 14ms`
+- The ID is echoed back in the `X-Request-Id` response header.
+- On errors, the ID is included in the JSON error body as `requestId`.
+
+---
+
+## 11. Logging Conventions
 
 All services use NestJS `Logger` — never `console.log/error/warn`.
 

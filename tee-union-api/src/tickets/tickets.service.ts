@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationDispatcherService } from '../notifications/notification-dispatcher.service';
 import { TicketPriority, TicketStatus, UserRole, NotificationType } from '@prisma/client';
+import { clampLimit } from '../common/utils/pagination';
 
 const SLA_DAYS: Record<TicketPriority, number> = {
   standard: 30,
@@ -103,7 +104,8 @@ export class TicketsService {
     role: UserRole,
     filters: { status?: TicketStatus; page?: number; limit?: number },
   ) {
-    const { status, page = 1, limit = 20 } = filters;
+    const { status, page = 1 } = filters;
+    const limit = clampLimit(filters.limit);
     const skip = (page - 1) * limit;
 
     let memberWhere = {};

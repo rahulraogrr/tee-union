@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ConflictException } from '@nestj
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationDispatcherService } from '../notifications/notification-dispatcher.service';
 import { NotificationType } from '@prisma/client';
+import { clampLimit } from '../common/utils/pagination';
 
 @Injectable()
 export class EventsService {
@@ -18,9 +19,10 @@ export class EventsService {
    *
    * @param districtId - Optional district filter
    * @param page       - Page number (default: 1)
-   * @param limit      - Results per page (default: 20)
+   * @param requestedLimit - Results per page (default: 20)
    */
-  async findAll(districtId?: string, page = 1, limit = 20) {
+  async findAll(districtId?: string, page = 1, requestedLimit = 20) {
+    const limit = clampLimit(requestedLimit);
     const skip = (page - 1) * limit;
     const where = {
       isPublished: true,

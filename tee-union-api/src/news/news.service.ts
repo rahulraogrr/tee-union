@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationDispatcherService } from '../notifications/notification-dispatcher.service';
 import { NotificationType } from '@prisma/client';
+import { clampLimit } from '../common/utils/pagination';
 
 @Injectable()
 export class NewsService {
@@ -16,9 +17,10 @@ export class NewsService {
    * Returns a paginated list of published news articles, ordered by publication date descending.
    *
    * @param page  - Page number (default: 1)
-   * @param limit - Results per page (default: 20)
+   * @param requestedLimit - Results per page (default: 20)
    */
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, requestedLimit = 20) {
+    const limit = clampLimit(requestedLimit);
     const skip = (page - 1) * limit;
     const [data, total] = await this.prisma.$transaction([
       this.prisma.news.findMany({

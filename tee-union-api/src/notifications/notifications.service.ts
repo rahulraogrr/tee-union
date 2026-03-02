@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { clampLimit } from '../common/utils/pagination';
 
 @Injectable()
 export class NotificationsService {
@@ -17,7 +18,8 @@ export class NotificationsService {
     userId: string,
     options: { page: number; limit: number; unreadOnly?: boolean },
   ) {
-    const { page, limit, unreadOnly } = options;
+    const { page, unreadOnly } = options;
+    const limit = clampLimit(options.limit);
     const skip = (page - 1) * limit;
 
     const where = {

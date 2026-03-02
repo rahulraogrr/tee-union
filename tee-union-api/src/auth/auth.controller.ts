@@ -6,7 +6,9 @@ import {
   ApiOkResponse,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -24,9 +26,12 @@ export class AuthController {
    * Public endpoint — no token required.
    * Returns a JWT access token and a `mustChangePin` flag (true on first login).
    */
+  // 5 attempts per 15 minutes per IP — brute-force protection
+  @Throttle({ default: { ttl: 900_000, limit: 5 } })
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiTooManyRequestsResponse({ description: 'Too many login attempts — try again in 15 minutes' })
   @ApiOperation({
     summary: 'Login with employee ID and 4-digit PIN',
     description:

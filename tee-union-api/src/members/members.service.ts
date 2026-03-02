@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { MaritalStatusType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { clampLimit } from '../common/utils/pagination';
 
 @Injectable()
 export class MembersService {
@@ -57,7 +58,8 @@ export class MembersService {
     page?: number;
     limit?: number;
   }) {
-    const { districtId, employerId, designationId, isActive, page = 1, limit = 20 } = filters;
+    const { districtId, employerId, designationId, isActive, page = 1 } = filters;
+    const limit = clampLimit(filters.limit);
     const skip = (page - 1) * limit;
 
     this.logger.debug(
