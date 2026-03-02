@@ -1,0 +1,295 @@
+@startuml
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+class node22 as "t_audit_logs  /* NEW in v6. Append-only. WHO changed WHAT on WHICH record and ... */" {
+   table_name: varchar(100)
+   record_id: uuid
+   action: audit_action
+   changed_by  /* NULL for system-triggered automated actions. */: uuid
+   old_values  /* Full row before change as JSONB. NULL for INSERT. */: jsonb
+   new_values  /* Full row after change as JSONB. NULL for DELETE. */: jsonb
+   ip_address: varchar(45)
+   user_agent: varchar(500)
+   created_at: timestamp
+   id: uuid
+}
+class node11 as "t_countries  /* Country reference. Seeded with India on setup. */" {
+   name: varchar(100)
+   code: varchar(10)
+   created_at: timestamp
+   id: uuid
+}
+class node19 as "t_designations  /* Job titles configurable per union. Names translated via t_tra... */" {
+   name: varchar(150)
+   is_active: boolean
+   created_at: timestamp
+   id: uuid
+}
+class node0 as "t_districts  /* Districts within a state. Seeded with all 33 Telangana distri... */" {
+   state_id: uuid
+   name: varchar(100)
+   created_at: timestamp
+   id: uuid
+}
+class node1 as "t_employers  /* Organisations that union t_members work for. Replaces hard-co... */" {
+   state_id: uuid
+   name: varchar(200)
+   short_name: varchar(50)
+   is_active: boolean
+   created_at: timestamp
+   id: uuid
+}
+class node9 as "t_event_registrations  /* Member RSVPs for events. UNIQUE prevents duplicate registrati... */" {
+   event_id: uuid
+   member_id: uuid
+   registered_at: timestamp
+   id: uuid
+}
+class node8 as "t_events  /* Union meetings, rallies, assemblies, and training sessions. */" {
+   title_en: varchar(250)
+   title_te: varchar(250)
+   description_en: text
+   description_te: text
+   event_date: timestamp
+   location: varchar(300)
+   max_capacity: integer
+   is_virtual: boolean
+   district_id: uuid
+   created_by: uuid
+   is_published: boolean
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node18 as "t_languages  /* Languages supported by this union. Seeded with en-IN and te-IN. */" {
+   code: varchar(10)
+   name: varchar(100)
+   native_name: varchar(100)
+   is_active: boolean
+   created_at: timestamp
+   id: uuid
+}
+class node6 as "t_member_designation_history  /* NEW in v6. Full history of every designation, employer, and p... */" {
+   member_id: uuid
+   designation_id: uuid
+   employer_id: uuid
+   work_unit_id: uuid
+   district_id: uuid
+   valid_from: date
+   valid_to  /* NULL means this is the currently active record. Set when the ... */: date
+   changed_by: uuid
+   notes  /* Transfer order number, promotion order reference, or other ad... */: text
+   created_at: timestamp
+   id: uuid
+}
+class node14 as "t_members  /* Complete membership register. Addresses stored as JSONB colum... */" {
+   user_id: uuid
+   employee_id: varchar(50)
+   employer_id: uuid
+   designation_id  /* Current designation. Full history in t_member_designation_his... */: uuid
+   full_name: varchar(200)
+   district_id: uuid
+   work_unit_id: uuid
+   member_since: date
+   date_of_birth: date
+   mobile_no: varchar(15)
+   marital_status: marital_status_type
+   marriage_anniversary_date  /* Must be NULL unless marital_status = married. Enforced by CHE... */: date
+   current_address  /* JSONB: { line1, line2, city, district_id, state_id, country_i... */: jsonb
+   permanent_address  /* JSONB: { line1, line2, city, district_id, state_id, country_i... */: jsonb
+   profile_complete: boolean
+   is_active: boolean
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node21 as "t_news  /* Union announcements, circulars, and notices. Managed via Stra... */" {
+   title_en: varchar(250)
+   title_te: varchar(250)
+   body_en: text
+   body_te: text
+   published_by: uuid
+   is_published: boolean
+   published_at: timestamp
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node2 as "t_notifications  /* Record of all notifications sent. Used for the in-app notific... */" {
+   user_id: uuid
+   title: varchar(200)
+   body: text
+   type: notification_type
+   reference_id: uuid
+   is_read: boolean
+   sent_at: timestamp
+   read_at: timestamp
+   id: uuid
+}
+class node17 as "t_push_tokens  /* FCM device tokens. One user can have multiple tokens across d... */" {
+   user_id: uuid
+   token: text
+   platform: platform_type
+   created_at: timestamp
+   last_used_at: timestamp
+   id: uuid
+}
+class node12 as "t_rep_assignments  /* Maps reps and zonal officers to districts or work units. Driv... */" {
+   user_id: uuid
+   district_id: uuid
+   work_unit_id: uuid
+   assigned_at: timestamp
+   assigned_by: uuid
+   is_active: boolean
+   id: uuid
+}
+class node7 as "t_staff_profiles  /* Profile for reps, zonal officers, and admins. Members use the... */" {
+   user_id: uuid
+   full_name: varchar(150)
+   mobile_no: varchar(15)
+   designation: varchar(100)
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node13 as "t_states  /* Indian states and union territories. */" {
+   country_id: uuid
+   name: varchar(100)
+   code: varchar(10)
+   created_at: timestamp
+   id: uuid
+}
+class node4 as "t_ticket_categories  /* Grievance categories managed by admin. Names translated via t... */" {
+   name: varchar(150)
+   is_active: boolean
+   created_at: timestamp
+   id: uuid
+}
+class node20 as "t_ticket_comments  /* Conversation thread on a ticket. */" {
+   ticket_id: uuid
+   user_id: uuid
+   comment: text
+   is_internal  /* If TRUE, filtered from member-facing API responses. Only visi... */: boolean
+   created_at: timestamp
+   id: uuid
+}
+class node5 as "t_ticket_status_history  /* Append-only audit trail of every status change. Never deleted... */" {
+   ticket_id: uuid
+   changed_by: uuid
+   old_status: ticket_status
+   new_status: ticket_status
+   notes: text
+   changed_at: timestamp
+   id: uuid
+}
+class node15 as "t_tickets  /* Core grievance records. */" {
+   member_id: uuid
+   assigned_rep_id: uuid
+   assigned_zonal_officer_id: uuid
+   category_id: uuid
+   title: varchar(200)
+   description: text
+   priority: ticket_priority
+   status: ticket_status
+   district_id  /* Copied from member at submission time so routing is preserved... */: uuid
+   work_unit_id: uuid
+   sla_deadline  /* standard = +30 days, urgent = +10 days, critical = +1 day fro... */: timestamp
+   resolved_at: timestamp
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node23 as "t_translations  /* Translated values for admin-managed reference data. Not used ... */" {
+   entity_type: varchar(100)
+   entity_id: uuid
+   language_id: uuid
+   field: varchar(100)
+   value: text
+   created_at: timestamp
+   id: uuid
+}
+class node16 as "t_union  /* Single-row table. Union identity, branding, and config. */" {
+   name: varchar(200)
+   short_name: varchar(50)
+   description: text
+   union_type: varchar(100)
+   registration_number: varchar(100)
+   founded_date: date
+   ho_phone: varchar(15)
+   ho_email: varchar(150)
+   ho_address  /* JSONB: { line1, line2, city, district_id, state_id, country_i... */: jsonb
+   logo_url: varchar(500)
+   primary_color  /* Hex color used to theme the mobile app for this union. */: varchar(10)
+   default_language_id: uuid
+   updated_at: timestamp
+   id: uuid
+}
+class node10 as "t_users  /* Central auth table. One row per person regardless of role. */" {
+   employee_id  /* Government-issued ID used as login username. */: varchar(50)
+   mobile_no: varchar(15)
+   email: varchar(150)
+   pin_hash: varchar(255)
+   one_time_pin_hash  /* Admin-issued temp PIN. Set to NULL immediately after first lo... */: varchar(255)
+   role: user_role
+   is_pin_changed  /* FALSE until member sets own PIN. Blocks all app access until ... */: boolean
+   is_active: boolean
+   created_by: uuid
+   last_login_at: timestamp
+   created_at: timestamp
+   updated_at: timestamp
+   id: uuid
+}
+class node3 as "t_work_units  /* Sub-district groupings (circles, branches, depots etc.). Gene... */" {
+   district_id: uuid
+   name: varchar(150)
+   unit_type: unit_type
+   is_active: boolean
+   created_at: timestamp
+   id: uuid
+}
+
+node22  -[#595959,plain]-^  node10 : "changed_by:id"
+node0   -[#595959,plain]-^  node13 : "state_id:id"
+node1   -[#595959,plain]-^  node13 : "state_id:id"
+node9   -[#595959,plain]-^  node8  : "event_id:id"
+node9   -[#595959,plain]-^  node14 : "member_id:id"
+node8   -[#595959,plain]-^  node0  : "district_id:id"
+node8   -[#595959,plain]-^  node10 : "created_by:id"
+node6   -[#595959,plain]-^  node19 : "designation_id:id"
+node6   -[#595959,plain]-^  node0  : "district_id:id"
+node6   -[#595959,plain]-^  node1  : "employer_id:id"
+node6   -[#595959,plain]-^  node14 : "member_id:id"
+node6   -[#595959,plain]-^  node10 : "changed_by:id"
+node6   -[#595959,plain]-^  node3  : "work_unit_id:id"
+node14  -[#595959,plain]-^  node19 : "designation_id:id"
+node14  -[#595959,plain]-^  node0  : "district_id:id"
+node14  -[#595959,plain]-^  node1  : "employer_id:id"
+node14  -[#595959,plain]-^  node10 : "user_id:id"
+node14  -[#595959,plain]-^  node3  : "work_unit_id:id"
+node21  -[#595959,plain]-^  node10 : "published_by:id"
+node2   -[#595959,plain]-^  node10 : "user_id:id"
+node17  -[#595959,plain]-^  node10 : "user_id:id"
+node12  -[#595959,plain]-^  node0  : "district_id:id"
+node12  -[#595959,plain]-^  node10 : "user_id:id"
+node12  -[#595959,plain]-^  node10 : "assigned_by:id"
+node12  -[#595959,plain]-^  node3  : "work_unit_id:id"
+node7   -[#595959,plain]-^  node10 : "user_id:id"
+node13  -[#595959,plain]-^  node11 : "country_id:id"
+node20  -[#595959,plain]-^  node15 : "ticket_id:id"
+node20  -[#595959,plain]-^  node10 : "user_id:id"
+node5   -[#595959,plain]-^  node15 : "ticket_id:id"
+node5   -[#595959,plain]-^  node10 : "changed_by:id"
+node15  -[#595959,plain]-^  node0  : "district_id:id"
+node15  -[#595959,plain]-^  node14 : "member_id:id"
+node15  -[#595959,plain]-^  node4  : "category_id:id"
+node15  -[#595959,plain]-^  node10 : "assigned_zonal_officer_id:id"
+node15  -[#595959,plain]-^  node10 : "assigned_rep_id:id"
+node15  -[#595959,plain]-^  node3  : "work_unit_id:id"
+node23  -[#595959,plain]-^  node18 : "language_id:id"
+node16  -[#595959,plain]-^  node18 : "default_language_id:id"
+node10  -[#595959,plain]-^  node10 : "created_by:id"
+node3   -[#595959,plain]-^  node0  : "district_id:id"
+@enduml
