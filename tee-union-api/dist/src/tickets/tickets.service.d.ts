@@ -4,6 +4,7 @@ import { TicketPriority, TicketStatus, UserRole } from '@prisma/client';
 export declare class TicketsService {
     private prisma;
     private dispatcher;
+    private readonly logger;
     constructor(prisma: PrismaService, dispatcher: NotificationDispatcherService);
     create(userId: string, dto: {
         title: string;
@@ -20,13 +21,13 @@ export declare class TicketsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        priority: import("@prisma/client").$Enums.TicketPriority;
         districtId: string | null;
         workUnitId: string | null;
-        memberId: string;
-        priority: import("@prisma/client").$Enums.TicketPriority;
-        status: import("@prisma/client").$Enums.TicketStatus;
         slaDeadline: Date;
         resolvedAt: Date | null;
+        memberId: string;
         assignedRepId: string | null;
         assignedZonalOfficerId: string | null;
         categoryId: string | null;
@@ -50,13 +51,13 @@ export declare class TicketsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            priority: import("@prisma/client").$Enums.TicketPriority;
             districtId: string | null;
             workUnitId: string | null;
-            memberId: string;
-            priority: import("@prisma/client").$Enums.TicketPriority;
-            status: import("@prisma/client").$Enums.TicketStatus;
             slaDeadline: Date;
             resolvedAt: Date | null;
+            memberId: string;
             assignedRepId: string | null;
             assignedZonalOfficerId: string | null;
             categoryId: string | null;
@@ -82,20 +83,20 @@ export declare class TicketsService {
         })[];
         member: {
             employeeId: string;
-            userId: string;
             fullName: string;
+            userId: string;
         };
         category: {
             name: string;
         } | null;
         statusHistory: {
             id: string;
-            changedById: string;
-            notes: string | null;
             changedAt: Date;
             ticketId: string;
+            changedById: string;
             oldStatus: import("@prisma/client").$Enums.TicketStatus;
             newStatus: import("@prisma/client").$Enums.TicketStatus;
+            notes: string | null;
         }[];
     } & {
         description: string | null;
@@ -103,13 +104,13 @@ export declare class TicketsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        priority: import("@prisma/client").$Enums.TicketPriority;
         districtId: string | null;
         workUnitId: string | null;
-        memberId: string;
-        priority: import("@prisma/client").$Enums.TicketPriority;
-        status: import("@prisma/client").$Enums.TicketStatus;
         slaDeadline: Date;
         resolvedAt: Date | null;
+        memberId: string;
         assignedRepId: string | null;
         assignedZonalOfficerId: string | null;
         categoryId: string | null;
@@ -125,13 +126,13 @@ export declare class TicketsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            priority: import("@prisma/client").$Enums.TicketPriority;
             districtId: string | null;
             workUnitId: string | null;
-            memberId: string;
-            priority: import("@prisma/client").$Enums.TicketPriority;
-            status: import("@prisma/client").$Enums.TicketStatus;
             slaDeadline: Date;
             resolvedAt: Date | null;
+            memberId: string;
             assignedRepId: string | null;
             assignedZonalOfficerId: string | null;
             categoryId: string | null;

@@ -8,12 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let NotificationsService = class NotificationsService {
+let NotificationsService = NotificationsService_1 = class NotificationsService {
     prisma;
+    logger = new common_1.Logger(NotificationsService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -59,6 +61,7 @@ let NotificationsService = class NotificationsService {
         const count = await this.prisma.notification.count({
             where: { userId, isRead: false },
         });
+        this.logger.debug(`Unread count fetched — userId: ${userId}, count: ${count}`);
         return { count };
     }
     async markAllReadForUser(userId) {
@@ -66,10 +69,11 @@ let NotificationsService = class NotificationsService {
             where: { userId, isRead: false },
             data: { isRead: true, readAt: new Date() },
         });
+        this.logger.log(`All notifications marked read — userId: ${userId}`);
     }
 };
 exports.NotificationsService = NotificationsService;
-exports.NotificationsService = NotificationsService = __decorate([
+exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], NotificationsService);

@@ -8,15 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var NewsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NewsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_dispatcher_service_1 = require("../notifications/notification-dispatcher.service");
 const client_1 = require("@prisma/client");
-let NewsService = class NewsService {
+let NewsService = NewsService_1 = class NewsService {
     prisma;
     dispatcher;
+    logger = new common_1.Logger(NewsService_1.name);
     constructor(prisma, dispatcher) {
         this.prisma = prisma;
         this.dispatcher = dispatcher;
@@ -58,8 +60,9 @@ let NewsService = class NewsService {
                 publishedAt: dto.publish ? new Date() : null,
             },
         });
+        this.logger.log(`News article created — id: ${news.id}, published: ${dto.publish ?? false}, by: ${publishedById}`);
         if (dto.publish) {
-            await this.broadcastToAllMembers(news.id, `\uD83D\uDCF0 ${dto.titleEn}`, 'A new news article has been published. Open the app to read it.');
+            await this.broadcastToAllMembers(news.id, `📰 ${dto.titleEn}`, 'A new news article has been published. Open the app to read it.');
         }
         return news;
     }
@@ -68,7 +71,8 @@ let NewsService = class NewsService {
             where: { id },
             data: { isPublished: true, publishedAt: new Date() },
         });
-        await this.broadcastToAllMembers(news.id, `\uD83D\uDCF0 ${news.titleEn}`, 'A new news article has been published. Open the app to read it.');
+        this.logger.log(`News article published — id: ${news.id}`);
+        await this.broadcastToAllMembers(news.id, `📰 ${news.titleEn}`, 'A new news article has been published. Open the app to read it.');
     }
     async broadcastToAllMembers(newsId, title, body) {
         try {
@@ -85,12 +89,12 @@ let NewsService = class NewsService {
             });
         }
         catch (err) {
-            console.error('News broadcast failed', err);
+            this.logger.warn(`News broadcast failed — newsId: ${newsId}`, err instanceof Error ? err.message : String(err));
         }
     }
 };
 exports.NewsService = NewsService;
-exports.NewsService = NewsService = __decorate([
+exports.NewsService = NewsService = NewsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notification_dispatcher_service_1.NotificationDispatcherService])

@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var TicketsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TicketsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -26,20 +27,24 @@ const STATUS_LABEL = {
     resolved: 'Resolved',
     closed: 'Closed',
 };
-let TicketsService = class TicketsService {
+let TicketsService = TicketsService_1 = class TicketsService {
     prisma;
     dispatcher;
+    logger = new common_1.Logger(TicketsService_1.name);
     constructor(prisma, dispatcher) {
         this.prisma = prisma;
         this.dispatcher = dispatcher;
     }
     async create(userId, dto) {
+        this.logger.debug(`Creating ticket for userId: ${userId}, priority: ${dto.priority ?? 'standard'}`);
         const member = await this.prisma.member.findUnique({
             where: { userId },
             select: { id: true, districtId: true, workUnitId: true },
         });
-        if (!member)
+        if (!member) {
+            this.logger.warn(`Ticket creation failed — member not found for userId: ${userId}`);
             throw new common_1.NotFoundException('Member profile not found');
+        }
         const priority = dto.priority ?? client_1.TicketPriority.standard;
         const slaDeadline = new Date();
         slaDeadline.setDate(slaDeadline.getDate() + SLA_DAYS[priority]);
@@ -59,6 +64,7 @@ let TicketsService = class TicketsService {
                 category: { select: { name: true } },
             },
         });
+        this.logger.log(`Ticket created — id: ${ticket.id}, priority: ${priority}, memberId: ${member.id}`);
         await this.notifyUser(userId, {
             notificationType: client_1.NotificationType.ticket_update,
             referenceId: ticket.id,
@@ -132,6 +138,7 @@ let TicketsService = class TicketsService {
                 },
             },
         });
+        this.logger.log(`Comment added — ticketId: ${ticketId}, role: ${role}, internal: ${isInternal}`);
         if (!isInternal && role !== client_1.UserRole.member) {
             const ownerId = result.ticket.member.userId;
             if (ownerId && ownerId !== userId) {
@@ -169,6 +176,7 @@ let TicketsService = class TicketsService {
                 },
             }),
         ]);
+        this.logger.log(`Ticket status updated — id: ${ticketId}, ${ticket.status} → ${newStatus}, changedBy: ${changedById}`);
         const ownerId = ticket.member.userId;
         if (ownerId && ownerId !== changedById) {
             const isCritical = newStatus === client_1.TicketStatus.resolved || newStatus === client_1.TicketStatus.escalated;
@@ -206,12 +214,12 @@ let TicketsService = class TicketsService {
             });
         }
         catch (err) {
-            console.error('Notification dispatch failed', err);
+            this.logger.warn(`Notification dispatch failed — userId: ${userId}, title: "${opts.title}"`, err instanceof Error ? err.message : String(err));
         }
     }
 };
 exports.TicketsService = TicketsService;
-exports.TicketsService = TicketsService = __decorate([
+exports.TicketsService = TicketsService = TicketsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notification_dispatcher_service_1.NotificationDispatcherService])

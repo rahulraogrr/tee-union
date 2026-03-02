@@ -8,16 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var MembersService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MembersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let MembersService = class MembersService {
+let MembersService = MembersService_1 = class MembersService {
     prisma;
+    logger = new common_1.Logger(MembersService_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
     async getMyProfile(userId) {
+        this.logger.debug(`Fetching profile for userId: ${userId}`);
         const member = await this.prisma.member.findUnique({
             where: { userId },
             include: {
@@ -28,13 +31,18 @@ let MembersService = class MembersService {
                 user: { select: { employeeId: true, email: true, role: true, lastLoginAt: true } },
             },
         });
-        if (!member)
+        if (!member) {
+            this.logger.warn(`Member profile not found for userId: ${userId}`);
             throw new common_1.NotFoundException('Member profile not found');
+        }
         return member;
     }
     async findAll(filters) {
         const { districtId, employerId, designationId, isActive, page = 1, limit = 20 } = filters;
         const skip = (page - 1) * limit;
+        this.logger.debug(`Listing members — page: ${page}, limit: ${limit}` +
+            (districtId ? `, districtId: ${districtId}` : '') +
+            (employerId ? `, employerId: ${employerId}` : ''));
         const where = {
             ...(districtId && { districtId }),
             ...(employerId && { employerId }),
@@ -59,6 +67,7 @@ let MembersService = class MembersService {
         return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
     async findOne(id) {
+        this.logger.debug(`Fetching member by id: ${id}`);
         const member = await this.prisma.member.findUnique({
             where: { id },
             include: {
@@ -76,14 +85,20 @@ let MembersService = class MembersService {
                 },
             },
         });
-        if (!member)
+        if (!member) {
+            this.logger.warn(`Member not found — id: ${id}`);
             throw new common_1.NotFoundException(`Member ${id} not found`);
+        }
         return member;
     }
     async updateMyProfile(userId, data) {
         const member = await this.prisma.member.findUnique({ where: { userId } });
-        if (!member)
+        if (!member) {
+            this.logger.warn(`Profile update failed — member not found for userId: ${userId}`);
             throw new common_1.NotFoundException('Member profile not found');
+        }
+        const fields = Object.keys(data).filter((k) => data[k] !== undefined);
+        this.logger.log(`Profile updated for userId: ${userId} — fields: ${fields.join(', ')}`);
         return this.prisma.member.update({
             where: { userId },
             data: { ...data, profileComplete: true, updatedAt: new Date() },
@@ -91,7 +106,7 @@ let MembersService = class MembersService {
     }
 };
 exports.MembersService = MembersService;
-exports.MembersService = MembersService = __decorate([
+exports.MembersService = MembersService = MembersService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], MembersService);

@@ -7,6 +7,12 @@ export class NotificationsService {
 
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Returns a paginated list of notifications for a user, ordered by sentAt descending.
+   *
+   * @param userId  - Recipient user ID
+   * @param options - Pagination options and optional unreadOnly filter
+   */
   async findForUser(
     userId: string,
     options: { page: number; limit: number; unreadOnly?: boolean },
@@ -52,17 +58,30 @@ export class NotificationsService {
     };
   }
 
+  /**
+   * Returns the count of unread notifications for the user.
+   * Used for badge / indicator counts in the mobile app.
+   *
+   * @param userId - Recipient user ID
+   */
   async getUnreadCount(userId: string): Promise<{ count: number }> {
     const count = await this.prisma.notification.count({
       where: { userId, isRead: false },
     });
+    this.logger.debug(`Unread count fetched — userId: ${userId}, count: ${count}`);
     return { count };
   }
 
+  /**
+   * Bulk-marks every unread notification for the user as read in a single DB call.
+   *
+   * @param userId - Recipient user ID
+   */
   async markAllReadForUser(userId: string): Promise<void> {
     await this.prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
     });
+    this.logger.log(`All notifications marked read — userId: ${userId}`);
   }
 }

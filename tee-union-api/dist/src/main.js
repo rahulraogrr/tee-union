@@ -19,15 +19,19 @@ async function bootstrap() {
     }));
     const config = new swagger_1.DocumentBuilder()
         .setTitle('TEE 1104 Union API')
-        .setDescription('NestJS + Prisma + PostgreSQL backend for the TEE 1104 Union mobile app. ' +
-        'Authentication: Employee ID + 4-digit PIN → JWT Bearer token.')
+        .setDescription('NestJS + Prisma + PostgreSQL backend for the TEE 1104 Union mobile app.\n\n' +
+        '**Authentication:** Employee ID + 4-digit PIN → JWT Bearer token.\n\n' +
+        'All endpoints (except `POST /auth/login` and `POST /telegram/webhook`) require ' +
+        'a valid `Authorization: Bearer <token>` header.')
         .setVersion('1.0')
-        .addBearerAuth()
+        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' }, 'bearer')
         .addTag('Auth', 'Login and PIN management')
         .addTag('Members', 'Member profiles and directory')
         .addTag('Tickets', 'Grievance ticketing system')
         .addTag('News', 'Union news and announcements')
         .addTag('Events', 'Union events and registrations')
+        .addTag('Notifications', 'In-app notification inbox')
+        .addTag('Telegram', 'Telegram bot account linking')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api/docs', app, document, {

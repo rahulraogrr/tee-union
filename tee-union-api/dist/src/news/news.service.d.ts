@@ -3,6 +3,7 @@ import { NotificationDispatcherService } from '../notifications/notification-dis
 export declare class NewsService {
     private prisma;
     private dispatcher;
+    private readonly logger;
     constructor(prisma: PrismaService, dispatcher: NotificationDispatcherService);
     findAll(page?: number, limit?: number): Promise<{
         data: {
@@ -25,11 +26,11 @@ export declare class NewsService {
         updatedAt: Date;
         titleEn: string;
         titleTe: string | null;
+        publishedAt: Date | null;
         bodyEn: string;
         bodyTe: string | null;
         publishedById: string | null;
         isPublished: boolean;
-        publishedAt: Date | null;
     }>;
     create(publishedById: string, dto: {
         titleEn: string;
@@ -43,11 +44,11 @@ export declare class NewsService {
         updatedAt: Date;
         titleEn: string;
         titleTe: string | null;
+        publishedAt: Date | null;
         bodyEn: string;
         bodyTe: string | null;
         publishedById: string | null;
         isPublished: boolean;
-        publishedAt: Date | null;
     }>;
     publish(id: string): Promise<void>;
     private broadcastToAllMembers;

@@ -20,6 +20,7 @@ const login_dto_1 = require("./dto/login.dto");
 const change_pin_dto_1 = require("./dto/change-pin.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
+const responses_1 = require("../common/swagger/responses");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -37,7 +38,15 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Login with employee ID and 4-digit PIN' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Login with employee ID and 4-digit PIN',
+        description: 'Validates the employee ID + PIN and returns a signed JWT.\n\n' +
+            'If `mustChangePin` is `true` the user **must** call `POST /auth/change-pin` before ' +
+            'using any other endpoint.',
+    }),
+    (0, swagger_1.ApiOkResponse)({ type: responses_1.LoginResponseDto, description: 'Login successful' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Invalid employee ID or PIN' }),
+    (0, swagger_1.ApiBadRequestResponse)({ description: 'Validation error — PIN must be exactly 4 digits' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
@@ -46,8 +55,15 @@ __decorate([
 __decorate([
     (0, common_1.Post)('change-pin'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Change PIN (required after first login)' }),
+    (0, swagger_1.ApiBearerAuth)('bearer'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Change your 4-digit PIN',
+        description: 'Requires the current PIN and a new PIN. ' +
+            'Must be called after first login when `mustChangePin` is `true`.',
+    }),
+    (0, swagger_1.ApiOkResponse)({ type: responses_1.OkResponseDto, description: 'PIN changed successfully' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Current PIN is incorrect' }),
+    (0, swagger_1.ApiBadRequestResponse)({ description: 'New PIN must be exactly 4 numeric digits' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

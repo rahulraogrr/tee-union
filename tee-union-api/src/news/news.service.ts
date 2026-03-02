@@ -12,6 +12,12 @@ export class NewsService {
     private dispatcher: NotificationDispatcherService,
   ) {}
 
+  /**
+   * Returns a paginated list of published news articles, ordered by publication date descending.
+   *
+   * @param page  - Page number (default: 1)
+   * @param limit - Results per page (default: 20)
+   */
   async findAll(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const [data, total] = await this.prisma.$transaction([
@@ -30,6 +36,12 @@ export class NewsService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * Returns a single published news article by ID.
+   *
+   * @param id - News article UUID
+   * @throws NotFoundException when the article does not exist or is not yet published
+   */
   async findOne(id: string) {
     const news = await this.prisma.news.findFirst({
       where: { id, isPublished: true },
@@ -38,6 +50,13 @@ export class NewsService {
     return news;
   }
 
+  /**
+   * Creates a news article. When `dto.publish` is true, immediately publishes it
+   * and broadcasts a notification to all active members.
+   *
+   * @param publishedById - User ID of the admin creating the article
+   * @param dto           - Article content and optional publish flag
+   */
   async create(publishedById: string, dto: {
     titleEn: string; titleTe?: string;
     bodyEn: string; bodyTe?: string;
@@ -55,10 +74,14 @@ export class NewsService {
       },
     });
 
+    this.logger.log(
+      `News article created — id: ${news.id}, published: ${dto.publish ?? false}, by: ${publishedById}`,
+    );
+
     if (dto.publish) {
       await this.broadcastToAllMembers(
         news.id,
-        `\uD83D\uDCF0 ${dto.titleEn}`,
+        `📰 ${dto.titleEn}`,
         'A new news article has been published. Open the app to read it.',
       );
     }
@@ -66,19 +89,34 @@ export class NewsService {
     return news;
   }
 
+  /**
+   * Marks a draft article as published and broadcasts to all active members.
+   *
+   * @param id - News article UUID
+   */
   async publish(id: string): Promise<void> {
     const news = await this.prisma.news.update({
       where: { id },
       data: { isPublished: true, publishedAt: new Date() },
     });
 
+    this.logger.log(`News article published — id: ${news.id}`);
+
     await this.broadcastToAllMembers(
       news.id,
-      `\uD83D\uDCF0 ${news.titleEn}`,
+      `📰 ${news.titleEn}`,
       'A new news article has been published. Open the app to read it.',
     );
   }
 
+  /**
+   * Sends a notification to every active user via the dispatcher.
+   * Failures are caught and logged — they do not abort the publish flow.
+   *
+   * @param newsId - Reference ID attached to each notification record
+   * @param title  - Push notification title
+   * @param body   - Push notification body
+   */
   private async broadcastToAllMembers(
     newsId: string,
     title: string,
@@ -98,7 +136,10 @@ export class NewsService {
         referenceId: newsId,
       });
     } catch (err) {
-      console.error('News broadcast failed', err);
+      this.logger.warn(
+        `News broadcast failed — newsId: ${newsId}`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 }

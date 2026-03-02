@@ -12,6 +12,14 @@ export class EventsService {
     private dispatcher: NotificationDispatcherService,
   ) {}
 
+  /**
+   * Returns upcoming published events (eventDate >= now), ordered by date ascending.
+   * When `districtId` is supplied, results include both that district's and union-wide events.
+   *
+   * @param districtId - Optional district filter
+   * @param page       - Page number (default: 1)
+   * @param limit      - Results per page (default: 20)
+   */
   async findAll(districtId?: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const where = {
@@ -41,6 +49,12 @@ export class EventsService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * Returns a single published event with district info and registration count.
+   *
+   * @param id - Event UUID
+   * @throws NotFoundException when the event does not exist or is not published
+   */
   async findOne(id: string) {
     const event = await this.prisma.event.findFirst({
       where: { id, isPublished: true },
@@ -53,6 +67,15 @@ export class EventsService {
     return event;
   }
 
+  /**
+   * Registers the member for an event and sends a confirmation notification.
+   * Enforces capacity limits when `maxCapacity` is set.
+   *
+   * @param eventId - Event UUID
+   * @param userId  - Authenticated member's user ID
+   * @throws NotFoundException  when the event or member profile is not found
+   * @throws ConflictException  when already registered or event is at full capacity
+   */
   async register(eventId: string, userId: string) {
     const member = await this.prisma.member.findUnique({
       where: { userId },
@@ -74,6 +97,8 @@ export class EventsService {
         data: { eventId, memberId: member.id },
       });
 
+      this.logger.log(`Event registration — eventId: ${eventId}, memberId: ${member.id}`);
+
       await this.notifyUser(userId, {
         type: NotificationType.event,
         referenceId: eventId,
@@ -87,6 +112,13 @@ export class EventsService {
     }
   }
 
+  /**
+   * Creates an event. When `dto.publish` is true, immediately publishes it and broadcasts
+   * a notification to eligible active members (district-scoped or union-wide).
+   *
+   * @param createdById - User ID of the admin creating the event
+   * @param dto         - Event data including optional districtId and publish flag
+   */
   async create(createdById: string, dto: {
     titleEn: string; titleTe?: string;
     descriptionEn?: string; descriptionTe?: string;
@@ -107,6 +139,10 @@ export class EventsService {
       },
     });
 
+    this.logger.log(
+      `Event created — id: ${event.id}, published: ${dto.publish ?? false}, districtId: ${dto.districtId ?? 'all'}, by: ${createdById}`,
+    );
+
     if (dto.publish) {
       const dateStr = new Date(dto.eventDate).toLocaleDateString('en-IN', { dateStyle: 'long' });
       const loc = dto.location ? ` at ${dto.location}` : '';
@@ -125,17 +161,29 @@ export class EventsService {
       const userIds = users.map((u) => u.id);
       if (userIds.length > 0) {
         await this.dispatcher
-          .broadcast(userIds, `\uD83D\uDCC5 ${dto.titleEn}`, body, {
+          .broadcast(userIds, `📅 ${dto.titleEn}`, body, {
             type: NotificationType.event,
             referenceId: event.id,
           })
-          .catch((err) => console.error('Event broadcast failed', err));
+          .catch((err) =>
+          this.logger.warn(
+            `Event broadcast failed — eventId: ${event.id}`,
+            err instanceof Error ? err.message : String(err),
+          ),
+        );
       }
     }
 
     return event;
   }
 
+  /**
+   * Creates a Notification DB record and dispatches it via the NotificationDispatcherService.
+   * Failures are caught and logged — they do not propagate to the caller.
+   *
+   * @param userId - Recipient user ID
+   * @param opts   - Notification payload (type, referenceId, title, body)
+   */
   private async notifyUser(
     userId: string,
     opts: { type: NotificationType; referenceId?: string; title: string; body: string },
@@ -158,7 +206,10 @@ export class EventsService {
         body: opts.body,
       });
     } catch (err) {
-      console.error('Event notification dispatch failed', err);
+      this.logger.warn(
+        `Event notification dispatch failed — userId: ${userId}, title: "${opts.title}"`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 }

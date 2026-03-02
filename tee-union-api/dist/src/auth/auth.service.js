@@ -41,15 +41,17 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
 const prisma_service_1 = require("../prisma/prisma.service");
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     prisma;
     jwt;
+    logger = new common_1.Logger(AuthService_1.name);
     constructor(prisma, jwt) {
         this.prisma = prisma;
         this.jwt = jwt;
@@ -59,17 +61,22 @@ let AuthService = class AuthService {
             where: { employeeId: dto.employeeId },
         });
         if (!user || !user.isActive) {
+            this.logger.warn(`Login failed — unknown or inactive employeeId: ${dto.employeeId}`);
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         const hashToCheck = user.oneTimePinHash ?? user.pinHash;
         const isValid = await bcrypt.compare(dto.pin, hashToCheck);
         if (!isValid) {
+            this.logger.warn(`Login failed — wrong PIN for employeeId: ${dto.employeeId}`);
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         await this.prisma.user.update({
             where: { id: user.id },
             data: { lastLoginAt: new Date() },
         });
+        const isFirstLogin = !!user.oneTimePinHash;
+        this.logger.log(`Login success — employeeId: ${user.employeeId}, role: ${user.role}` +
+            (isFirstLogin ? ' [first login]' : ''));
         const token = this.signToken(user.id, user.employeeId, user.role);
         return {
             accessToken: token,
@@ -85,6 +92,7 @@ let AuthService = class AuthService {
         const hashToCheck = user.oneTimePinHash ?? user.pinHash;
         const isValid = await bcrypt.compare(dto.currentPin, hashToCheck);
         if (!isValid) {
+            this.logger.warn(`PIN change failed — wrong current PIN for userId: ${userId}`);
             throw new common_1.BadRequestException('Current PIN is incorrect');
         }
         if (dto.currentPin === dto.newPin) {
@@ -99,6 +107,7 @@ let AuthService = class AuthService {
                 isPinChanged: true,
             },
         });
+        this.logger.log(`PIN changed successfully for userId: ${userId}`);
         return { message: 'PIN changed successfully' };
     }
     signToken(userId, employeeId, role) {
@@ -106,7 +115,7 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService])

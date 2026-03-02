@@ -12,12 +12,12 @@ export declare class NotificationsController {
             title: string;
             id: string;
             body: string;
+            isRead: boolean;
+            readAt: Date | null;
             isUrgent: boolean;
             isCritical: boolean;
-            referenceId: string | null;
-            isRead: boolean;
             sentAt: Date;
-            readAt: Date | null;
+            referenceId: string | null;
         }[];
         meta: {
             total: number;

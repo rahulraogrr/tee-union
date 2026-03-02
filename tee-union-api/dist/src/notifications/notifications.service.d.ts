@@ -1,6 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 export declare class NotificationsService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     findForUser(userId: string, options: {
         page: number;
@@ -12,12 +13,12 @@ export declare class NotificationsService {
             title: string;
             id: string;
             body: string;
+            isRead: boolean;
+            readAt: Date | null;
             isUrgent: boolean;
             isCritical: boolean;
-            referenceId: string | null;
-            isRead: boolean;
             sentAt: Date;
-            readAt: Date | null;
+            referenceId: string | null;
         }[];
         meta: {
             total: number;

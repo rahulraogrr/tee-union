@@ -2,6 +2,7 @@ import { MaritalStatusType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 export declare class MembersService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     getMyProfile(userId: string): Promise<{
         district: {
@@ -35,10 +36,10 @@ export declare class MembersService {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;
@@ -77,10 +78,10 @@ export declare class MembersService {
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            fullName: string;
             userId: string;
             employerId: string;
             designationId: string;
-            fullName: string;
             districtId: string;
             workUnitId: string | null;
             memberSince: Date;
@@ -148,9 +149,9 @@ export declare class MembersService {
             workUnitId: string | null;
             validFrom: Date;
             memberId: string;
-            validTo: Date | null;
             changedById: string;
             notes: string | null;
+            validTo: Date | null;
         })[];
     } & {
         employeeId: string;
@@ -159,10 +160,10 @@ export declare class MembersService {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;
@@ -186,10 +187,10 @@ export declare class MembersService {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;

@@ -1,4 +1,5 @@
 import { EventsService } from './events.service';
+import { CreateEventDto } from './dto/create-event.dto';
 export declare class EventsController {
     private eventsService;
     constructor(eventsService: EventsService);
@@ -8,15 +9,15 @@ export declare class EventsController {
                 name: string;
             } | null;
             id: string;
-            _count: {
-                registrations: number;
-            };
             titleEn: string;
             titleTe: string | null;
             eventDate: Date;
             location: string | null;
-            maxCapacity: number | null;
             isVirtual: boolean;
+            maxCapacity: number | null;
+            _count: {
+                registrations: number;
+            };
         }[];
         total: number;
         page: number;
@@ -35,16 +36,16 @@ export declare class EventsController {
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
-        districtId: string | null;
         titleEn: string;
         titleTe: string | null;
+        eventDate: Date;
+        location: string | null;
+        isVirtual: boolean;
+        maxCapacity: number | null;
+        districtId: string | null;
         isPublished: boolean;
         descriptionEn: string | null;
         descriptionTe: string | null;
-        eventDate: Date;
-        location: string | null;
-        maxCapacity: number | null;
-        isVirtual: boolean;
     }>;
     register(eventId: string, userId: string): Promise<{
         id: string;
@@ -52,20 +53,20 @@ export declare class EventsController {
         eventId: string;
         registeredAt: Date;
     }>;
-    create(userId: string, body: any): Promise<{
+    create(userId: string, body: CreateEventDto): Promise<{
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
-        districtId: string | null;
         titleEn: string;
         titleTe: string | null;
+        eventDate: Date;
+        location: string | null;
+        isVirtual: boolean;
+        maxCapacity: number | null;
+        districtId: string | null;
         isPublished: boolean;
         descriptionEn: string | null;
         descriptionTe: string | null;
-        eventDate: Date;
-        location: string | null;
-        maxCapacity: number | null;
-        isVirtual: boolean;
     }>;
 }

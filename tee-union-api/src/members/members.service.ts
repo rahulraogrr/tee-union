@@ -11,6 +11,13 @@ export class MembersService {
   // ---------------------------------------------------------------------------
   // GET MY PROFILE
   // ---------------------------------------------------------------------------
+  /**
+   * Returns the full Prisma member record for the authenticated user,
+   * including employer, designation, district, work unit, and user login info.
+   *
+   * @param userId - Authenticated user's ID
+   * @throws NotFoundException when no member row is linked to this user
+   */
   async getMyProfile(userId: string) {
     this.logger.debug(`Fetching profile for userId: ${userId}`);
 
@@ -36,6 +43,12 @@ export class MembersService {
   // ---------------------------------------------------------------------------
   // LIST ALL MEMBERS (admin / rep)
   // ---------------------------------------------------------------------------
+  /**
+   * Returns a paginated, optionally filtered list of members.
+   * Intended for admin and rep roles only (enforced at the controller level).
+   *
+   * @param filters - Optional districtId, employerId, designationId, isActive, page, limit
+   */
   async findAll(filters: {
     districtId?: string;
     employerId?: string;
@@ -82,6 +95,12 @@ export class MembersService {
   // ---------------------------------------------------------------------------
   // GET ONE MEMBER BY ID (admin / rep)
   // ---------------------------------------------------------------------------
+  /**
+   * Returns a single member's full record including designation history.
+   *
+   * @param id - Member UUID
+   * @throws NotFoundException when no member with this ID exists
+   */
   async findOne(id: string) {
     this.logger.debug(`Fetching member by id: ${id}`);
 
@@ -114,6 +133,14 @@ export class MembersService {
   // ---------------------------------------------------------------------------
   // UPDATE MY PROFILE (member self-service)
   // ---------------------------------------------------------------------------
+  /**
+   * Allows a member to update their residential address, mobile number, or marital status.
+   * Sets `profileComplete = true` on the member row after any update.
+   *
+   * @param userId - Authenticated user's ID
+   * @param data   - Partial update data (only provided fields are written)
+   * @throws NotFoundException when no member row is linked to this user
+   */
   async updateMyProfile(
     userId: string,
     data: {

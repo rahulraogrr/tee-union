@@ -8,15 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var EventsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_dispatcher_service_1 = require("../notifications/notification-dispatcher.service");
 const client_1 = require("@prisma/client");
-let EventsService = class EventsService {
+let EventsService = EventsService_1 = class EventsService {
     prisma;
     dispatcher;
+    logger = new common_1.Logger(EventsService_1.name);
     constructor(prisma, dispatcher) {
         this.prisma = prisma;
         this.dispatcher = dispatcher;
@@ -77,6 +79,7 @@ let EventsService = class EventsService {
             const registration = await this.prisma.eventRegistration.create({
                 data: { eventId, memberId: member.id },
             });
+            this.logger.log(`Event registration — eventId: ${eventId}, memberId: ${member.id}`);
             await this.notifyUser(userId, {
                 type: client_1.NotificationType.event,
                 referenceId: eventId,
@@ -102,6 +105,7 @@ let EventsService = class EventsService {
                 isPublished: dto.publish ?? false,
             },
         });
+        this.logger.log(`Event created — id: ${event.id}, published: ${dto.publish ?? false}, districtId: ${dto.districtId ?? 'all'}, by: ${createdById}`);
         if (dto.publish) {
             const dateStr = new Date(dto.eventDate).toLocaleDateString('en-IN', { dateStyle: 'long' });
             const loc = dto.location ? ` at ${dto.location}` : '';
@@ -118,11 +122,11 @@ let EventsService = class EventsService {
             const userIds = users.map((u) => u.id);
             if (userIds.length > 0) {
                 await this.dispatcher
-                    .broadcast(userIds, `\uD83D\uDCC5 ${dto.titleEn}`, body, {
+                    .broadcast(userIds, `📅 ${dto.titleEn}`, body, {
                     type: client_1.NotificationType.event,
                     referenceId: event.id,
                 })
-                    .catch((err) => console.error('Event broadcast failed', err));
+                    .catch((err) => this.logger.warn(`Event broadcast failed — eventId: ${event.id}`, err instanceof Error ? err.message : String(err)));
             }
         }
         return event;
@@ -146,12 +150,12 @@ let EventsService = class EventsService {
             });
         }
         catch (err) {
-            console.error('Event notification dispatch failed', err);
+            this.logger.warn(`Event notification dispatch failed — userId: ${userId}, title: "${opts.title}"`, err instanceof Error ? err.message : String(err));
         }
     }
 };
 exports.EventsService = EventsService;
-exports.EventsService = EventsService = __decorate([
+exports.EventsService = EventsService = EventsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notification_dispatcher_service_1.NotificationDispatcherService])

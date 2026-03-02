@@ -1,4 +1,5 @@
 import { MembersService } from './members.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 export declare class MembersController {
     private membersService;
     constructor(membersService: MembersService);
@@ -34,10 +35,10 @@ export declare class MembersController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;
@@ -48,17 +49,17 @@ export declare class MembersController {
         permanentAddress: import("@prisma/client/runtime/client").JsonValue | null;
         profileComplete: boolean;
     }>;
-    updateMyProfile(userId: string, body: any): Promise<{
+    updateMyProfile(userId: string, body: UpdateProfileDto): Promise<{
         employeeId: string;
         id: string;
         mobileNo: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;
@@ -90,10 +91,10 @@ export declare class MembersController {
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            fullName: string;
             userId: string;
             employerId: string;
             designationId: string;
-            fullName: string;
             districtId: string;
             workUnitId: string | null;
             memberSince: Date;
@@ -161,9 +162,9 @@ export declare class MembersController {
             workUnitId: string | null;
             validFrom: Date;
             memberId: string;
-            validTo: Date | null;
             changedById: string;
             notes: string | null;
+            validTo: Date | null;
         })[];
     } & {
         employeeId: string;
@@ -172,10 +173,10 @@ export declare class MembersController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        fullName: string;
         userId: string;
         employerId: string;
         designationId: string;
-        fullName: string;
         districtId: string;
         workUnitId: string | null;
         memberSince: Date;

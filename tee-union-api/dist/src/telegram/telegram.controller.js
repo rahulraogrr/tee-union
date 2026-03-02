@@ -50,10 +50,11 @@ exports.TelegramController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const config_1 = require("@nestjs/config");
+const crypto = __importStar(require("crypto"));
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const telegram_link_service_1 = require("./telegram-link.service");
-const crypto = __importStar(require("crypto"));
+const responses_1 = require("../common/swagger/responses");
 let TelegramController = TelegramController_1 = class TelegramController {
     linkService;
     config;
@@ -85,9 +86,7 @@ let TelegramController = TelegramController_1 = class TelegramController {
         return { ok: true };
     }
     async getLinkStatus(user) {
-        return {
-            linked: !!user.telegramChatId,
-        };
+        return { linked: !!user.telegramChatId };
     }
 };
 exports.TelegramController = TelegramController;
@@ -95,7 +94,14 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('webhook'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Telegram webhook (called by Telegram servers)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Telegram webhook (called by Telegram servers only)',
+        description: 'Receives bot updates from Telegram. ' +
+            'The `x-telegram-bot-api-secret-token` header is verified against `TELEGRAM_WEBHOOK_SECRET`. ' +
+            'This endpoint should be whitelisted from JWT guard but protected by the HMAC secret.',
+    }),
+    (0, swagger_1.ApiOkResponse)({ type: responses_1.OkResponseDto, description: 'Update acknowledged' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Invalid or missing webhook secret' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Headers)('x-telegram-bot-api-secret-token')),
     __metadata("design:type", Function),
@@ -104,7 +110,14 @@ __decorate([
 ], TelegramController.prototype, "handleWebhook", null);
 __decorate([
     (0, common_1.Post)('link-token'),
-    (0, swagger_1.ApiOperation)({ summary: 'Generate a one-time Telegram link token' }),
+    (0, swagger_1.ApiBearerAuth)('bearer'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Generate a one-time Telegram link token',
+        description: 'Returns a short-lived token and instructions. ' +
+            'The user sends `/link <token>` to the bot in Telegram to link their account.',
+    }),
+    (0, swagger_1.ApiCreatedResponse)({ type: responses_1.TelegramLinkTokenDto, description: 'Link token generated' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid JWT token' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -112,7 +125,13 @@ __decorate([
 ], TelegramController.prototype, "generateLinkToken", null);
 __decorate([
     (0, common_1.Post)('unlink'),
-    (0, swagger_1.ApiOperation)({ summary: 'Unlink Telegram from account' }),
+    (0, swagger_1.ApiBearerAuth)('bearer'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Unlink Telegram from your account',
+        description: 'Clears the stored Telegram chat ID. Fallback notifications via Telegram will stop.',
+    }),
+    (0, swagger_1.ApiOkResponse)({ type: responses_1.OkResponseDto, description: 'Telegram unlinked' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid JWT token' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -120,14 +139,19 @@ __decorate([
 ], TelegramController.prototype, "unlinkTelegram", null);
 __decorate([
     (0, common_1.Get)('status'),
-    (0, swagger_1.ApiOperation)({ summary: 'Check if Telegram is linked for current user' }),
+    (0, swagger_1.ApiBearerAuth)('bearer'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Check if Telegram is linked for the current user',
+    }),
+    (0, swagger_1.ApiOkResponse)({ type: responses_1.TelegramStatusDto, description: 'Telegram link status' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid JWT token' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TelegramController.prototype, "getLinkStatus", null);
 exports.TelegramController = TelegramController = TelegramController_1 = __decorate([
-    (0, swagger_1.ApiTags)('telegram'),
+    (0, swagger_1.ApiTags)('Telegram'),
     (0, common_1.Controller)('telegram'),
     __metadata("design:paramtypes", [telegram_link_service_1.TelegramLinkService,
         config_1.ConfigService])

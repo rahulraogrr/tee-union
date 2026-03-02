@@ -29,6 +29,14 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // CREATE TICKET (member)
   // ---------------------------------------------------------------------------
+  /**
+   * Raises a new grievance ticket on behalf of a member.
+   * Calculates the SLA deadline from the priority and dispatches an acknowledgement notification.
+   *
+   * @param userId - Authenticated member's user ID
+   * @param dto    - Ticket data (title, description, categoryId, priority)
+   * @throws NotFoundException when the user has no linked member profile
+   */
   async create(userId: string, dto: {
     title: string;
     description?: string;
@@ -82,6 +90,14 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // LIST TICKETS (scoped by role)
   // ---------------------------------------------------------------------------
+  /**
+   * Returns a paginated list of tickets scoped to the caller's role.
+   * Members see only their own; reps see assigned tickets; admins see all.
+   *
+   * @param userId  - Authenticated user's ID
+   * @param role    - Caller's role (determines scope filter)
+   * @param filters - Optional status filter + pagination (page, limit)
+   */
   async findAll(
     userId: string,
     role: UserRole,
@@ -127,6 +143,16 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // GET ONE TICKET
   // ---------------------------------------------------------------------------
+  /**
+   * Returns a single ticket with comments (internal comments hidden from members)
+   * and full status history.
+   *
+   * @param id     - Ticket UUID
+   * @param userId - Authenticated user's ID (used for ownership check)
+   * @param role   - Caller's role
+   * @throws NotFoundException  when the ticket does not exist
+   * @throws ForbiddenException when a member attempts to view another member's ticket
+   */
   async findOne(id: string, userId: string, role: UserRole) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
@@ -154,6 +180,18 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // ADD COMMENT
   // ---------------------------------------------------------------------------
+  /**
+   * Appends a comment to an existing ticket.
+   * Internal comments are visible only to reps and admins.
+   * The ticket owner is notified via push/Telegram/SMS when a rep adds a public comment.
+   *
+   * @param ticketId   - Ticket UUID
+   * @param userId     - Commenter's user ID
+   * @param role       - Commenter's role
+   * @param comment    - Comment text
+   * @param isInternal - If true, hidden from the ticket owner (default: false)
+   * @throws ForbiddenException when a member attempts to post an internal comment
+   */
   async addComment(
     ticketId: string,
     userId: string,
@@ -174,6 +212,10 @@ export class TicketsService {
       },
     });
 
+    this.logger.log(
+      `Comment added — ticketId: ${ticketId}, role: ${role}, internal: ${isInternal}`,
+    );
+
     // Notify the ticket owner when a rep/admin adds a public comment
     if (!isInternal && role !== UserRole.member) {
       const ownerId = result.ticket.member.userId;
@@ -193,6 +235,15 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // UPDATE STATUS (rep / admin)
   // ---------------------------------------------------------------------------
+  /**
+   * Transitions a ticket to a new status and records a history entry.
+   * Notifies the ticket owner; marks the notification as critical for resolved/escalated.
+   *
+   * @param ticketId    - Ticket UUID
+   * @param changedById - User ID of the rep/admin making the change
+   * @param newStatus   - Target status
+   * @param notes       - Optional note recorded in status history
+   */
   async updateStatus(
     ticketId: string,
     changedById: string,
@@ -224,6 +275,10 @@ export class TicketsService {
       }),
     ]);
 
+    this.logger.log(
+      `Ticket status updated — id: ${ticketId}, ${ticket.status} → ${newStatus}, changedBy: ${changedById}`,
+    );
+
     // Notify the ticket owner of the status change
     const ownerId = ticket.member.userId;
     if (ownerId && ownerId !== changedById) {
@@ -246,6 +301,13 @@ export class TicketsService {
   // ---------------------------------------------------------------------------
   // Private: create notification record and dispatch
   // ---------------------------------------------------------------------------
+  /**
+   * Creates a Notification DB record and dispatches it via the NotificationDispatcherService.
+   * Failures are caught and logged as warnings — never propagated to the caller.
+   *
+   * @param userId - Recipient user ID
+   * @param opts   - Notification payload options
+   */
   private async notifyUser(
     userId: string,
     opts: {
@@ -279,7 +341,10 @@ export class TicketsService {
         isCritical: opts.isCritical,
       });
     } catch (err) {
-      console.error('Notification dispatch failed', err);
+      this.logger.warn(
+        `Notification dispatch failed — userId: ${userId}, title: "${opts.title}"`,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 }

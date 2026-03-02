@@ -3,6 +3,7 @@ import { NotificationDispatcherService } from '../notifications/notification-dis
 export declare class EventsService {
     private prisma;
     private dispatcher;
+    private readonly logger;
     constructor(prisma: PrismaService, dispatcher: NotificationDispatcherService);
     findAll(districtId?: string, page?: number, limit?: number): Promise<{
         data: {
@@ -10,15 +11,15 @@ export declare class EventsService {
                 name: string;
             } | null;
             id: string;
-            _count: {
-                registrations: number;
-            };
             titleEn: string;
             titleTe: string | null;
             eventDate: Date;
             location: string | null;
-            maxCapacity: number | null;
             isVirtual: boolean;
+            maxCapacity: number | null;
+            _count: {
+                registrations: number;
+            };
         }[];
         total: number;
         page: number;
@@ -37,16 +38,16 @@ export declare class EventsService {
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
-        districtId: string | null;
         titleEn: string;
         titleTe: string | null;
+        eventDate: Date;
+        location: string | null;
+        isVirtual: boolean;
+        maxCapacity: number | null;
+        districtId: string | null;
         isPublished: boolean;
         descriptionEn: string | null;
         descriptionTe: string | null;
-        eventDate: Date;
-        location: string | null;
-        maxCapacity: number | null;
-        isVirtual: boolean;
     }>;
     register(eventId: string, userId: string): Promise<{
         id: string;
@@ -70,16 +71,16 @@ export declare class EventsService {
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
-        districtId: string | null;
         titleEn: string;
         titleTe: string | null;
+        eventDate: Date;
+        location: string | null;
+        isVirtual: boolean;
+        maxCapacity: number | null;
+        districtId: string | null;
         isPublished: boolean;
         descriptionEn: string | null;
         descriptionTe: string | null;
-        eventDate: Date;
-        location: string | null;
-        maxCapacity: number | null;
-        isVirtual: boolean;
     }>;
     private notifyUser;
 }

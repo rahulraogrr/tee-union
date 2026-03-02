@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
 const bull_1 = require("@nestjs/bull");
+const http_logger_middleware_1 = require("./common/middleware/http-logger.middleware");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const members_module_1 = require("./members/members.module");
@@ -22,6 +23,9 @@ const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(http_logger_middleware_1.HttpLoggerMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([

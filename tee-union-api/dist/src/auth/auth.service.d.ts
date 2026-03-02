@@ -5,6 +5,7 @@ import { ChangePinDto } from './dto/change-pin.dto';
 export declare class AuthService {
     private prisma;
     private jwt;
+    private readonly logger;
     constructor(prisma: PrismaService, jwt: JwtService);
     login(dto: LoginDto): Promise<{
         accessToken: string;

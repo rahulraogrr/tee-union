@@ -1,4 +1,6 @@
 import { NewsService } from './news.service';
+import { CreateNewsDto } from './dto/create-news.dto';
+import { OkResponseDto } from '../common/swagger/responses';
 export declare class NewsController {
     private newsService;
     constructor(newsService: NewsService);
@@ -23,22 +25,23 @@ export declare class NewsController {
         updatedAt: Date;
         titleEn: string;
         titleTe: string | null;
+        publishedAt: Date | null;
         bodyEn: string;
         bodyTe: string | null;
         publishedById: string | null;
         isPublished: boolean;
-        publishedAt: Date | null;
     }>;
-    create(userId: string, body: any): Promise<{
+    create(userId: string, body: CreateNewsDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         titleEn: string;
         titleTe: string | null;
+        publishedAt: Date | null;
         bodyEn: string;
         bodyTe: string | null;
         publishedById: string | null;
         isPublished: boolean;
-        publishedAt: Date | null;
     }>;
+    publish(id: string): Promise<OkResponseDto>;
 }
