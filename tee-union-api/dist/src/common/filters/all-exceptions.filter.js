@@ -21,7 +21,8 @@ let AllExceptionsFilter = AllExceptionsFilter_1 = class AllExceptionsFilter {
         const message = exception instanceof common_1.HttpException
             ? exception.getResponse()
             : 'Internal server error';
-        const logMessage = `${request.method} ${request.url} → ${status}`;
+        const requestId = request.id ?? '-';
+        const logMessage = `[${requestId}] ${request.method} ${request.url} → ${status}`;
         if (status >= 500) {
             this.logger.error(logMessage, exception instanceof Error ? exception.stack : String(exception));
         }
@@ -32,6 +33,7 @@ let AllExceptionsFilter = AllExceptionsFilter_1 = class AllExceptionsFilter {
             statusCode: status,
             timestamp: new Date().toISOString(),
             path: request.url,
+            requestId,
             message,
         });
     }

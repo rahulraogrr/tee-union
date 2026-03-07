@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const change_pin_dto_1 = require("./dto/change-pin.dto");
@@ -35,9 +36,11 @@ let AuthController = class AuthController {
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, throttler_1.Throttle)({ default: { ttl: 900_000, limit: 5 } }),
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiTooManyRequestsResponse)({ description: 'Too many login attempts — try again in 15 minutes' }),
     (0, swagger_1.ApiOperation)({
         summary: 'Login with employee ID and 4-digit PIN',
         description: 'Validates the employee ID + PIN and returns a signed JWT.\n\n' +

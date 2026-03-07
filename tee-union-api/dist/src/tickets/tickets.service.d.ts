@@ -25,9 +25,9 @@ export declare class TicketsService {
         priority: import("@prisma/client").$Enums.TicketPriority;
         districtId: string | null;
         workUnitId: string | null;
+        memberId: string;
         slaDeadline: Date;
         resolvedAt: Date | null;
-        memberId: string;
         assignedRepId: string | null;
         assignedZonalOfficerId: string | null;
         categoryId: string | null;
@@ -55,9 +55,9 @@ export declare class TicketsService {
             priority: import("@prisma/client").$Enums.TicketPriority;
             districtId: string | null;
             workUnitId: string | null;
+            memberId: string;
             slaDeadline: Date;
             resolvedAt: Date | null;
-            memberId: string;
             assignedRepId: string | null;
             assignedZonalOfficerId: string | null;
             categoryId: string | null;
@@ -91,12 +91,12 @@ export declare class TicketsService {
         } | null;
         statusHistory: {
             id: string;
+            changedById: string;
+            notes: string | null;
             changedAt: Date;
             ticketId: string;
-            changedById: string;
             oldStatus: import("@prisma/client").$Enums.TicketStatus;
             newStatus: import("@prisma/client").$Enums.TicketStatus;
-            notes: string | null;
         }[];
     } & {
         description: string | null;
@@ -108,9 +108,9 @@ export declare class TicketsService {
         priority: import("@prisma/client").$Enums.TicketPriority;
         districtId: string | null;
         workUnitId: string | null;
+        memberId: string;
         slaDeadline: Date;
         resolvedAt: Date | null;
-        memberId: string;
         assignedRepId: string | null;
         assignedZonalOfficerId: string | null;
         categoryId: string | null;
@@ -130,9 +130,9 @@ export declare class TicketsService {
             priority: import("@prisma/client").$Enums.TicketPriority;
             districtId: string | null;
             workUnitId: string | null;
+            memberId: string;
             slaDeadline: Date;
             resolvedAt: Date | null;
-            memberId: string;
             assignedRepId: string | null;
             assignedZonalOfficerId: string | null;
             categoryId: string | null;

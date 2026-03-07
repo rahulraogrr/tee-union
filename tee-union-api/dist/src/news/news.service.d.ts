@@ -5,7 +5,7 @@ export declare class NewsService {
     private dispatcher;
     private readonly logger;
     constructor(prisma: PrismaService, dispatcher: NotificationDispatcherService);
-    findAll(page?: number, limit?: number): Promise<{
+    findAll(page?: number, requestedLimit?: number): Promise<{
         data: {
             id: string;
             titleEn: string;

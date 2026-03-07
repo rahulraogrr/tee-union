@@ -16,7 +16,8 @@ let HttpLoggerMiddleware = class HttpLoggerMiddleware {
         res.on('finish', () => {
             const { statusCode } = res;
             const duration = Date.now() - start;
-            const message = `${method} ${originalUrl} ${statusCode} — ${duration}ms`;
+            const requestId = req.id ?? '-';
+            const message = `[${requestId}] ${method} ${originalUrl} ${statusCode} — ${duration}ms`;
             if (statusCode >= 500) {
                 this.logger.error(message);
             }

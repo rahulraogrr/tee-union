@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_dispatcher_service_1 = require("../notifications/notification-dispatcher.service");
 const client_1 = require("@prisma/client");
+const pagination_1 = require("../common/utils/pagination");
 const SLA_DAYS = {
     standard: 30,
     urgent: 10,
@@ -74,7 +75,8 @@ let TicketsService = TicketsService_1 = class TicketsService {
         return ticket;
     }
     async findAll(userId, role, filters) {
-        const { status, page = 1, limit = 20 } = filters;
+        const { status, page = 1 } = filters;
+        const limit = (0, pagination_1.clampLimit)(filters.limit);
         const skip = (page - 1) * limit;
         let memberWhere = {};
         if (role === client_1.UserRole.member) {

@@ -149,9 +149,9 @@ export declare class MembersService {
             workUnitId: string | null;
             validFrom: Date;
             memberId: string;
+            validTo: Date | null;
             changedById: string;
             notes: string | null;
-            validTo: Date | null;
         })[];
     } & {
         employeeId: string;

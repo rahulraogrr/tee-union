@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_dispatcher_service_1 = require("../notifications/notification-dispatcher.service");
 const client_1 = require("@prisma/client");
+const pagination_1 = require("../common/utils/pagination");
 let NewsService = NewsService_1 = class NewsService {
     prisma;
     dispatcher;
@@ -23,7 +24,8 @@ let NewsService = NewsService_1 = class NewsService {
         this.prisma = prisma;
         this.dispatcher = dispatcher;
     }
-    async findAll(page = 1, limit = 20) {
+    async findAll(page = 1, requestedLimit = 20) {
+        const limit = (0, pagination_1.clampLimit)(requestedLimit);
         const skip = (page - 1) * limit;
         const [data, total] = await this.prisma.$transaction([
             this.prisma.news.findMany({

@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MembersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const pagination_1 = require("../common/utils/pagination");
 let MembersService = MembersService_1 = class MembersService {
     prisma;
     logger = new common_1.Logger(MembersService_1.name);
@@ -38,7 +39,8 @@ let MembersService = MembersService_1 = class MembersService {
         return member;
     }
     async findAll(filters) {
-        const { districtId, employerId, designationId, isActive, page = 1, limit = 20 } = filters;
+        const { districtId, employerId, designationId, isActive, page = 1 } = filters;
+        const limit = (0, pagination_1.clampLimit)(filters.limit);
         const skip = (page - 1) * limit;
         this.logger.debug(`Listing members — page: ${page}, limit: ${limit}` +
             (districtId ? `, districtId: ${districtId}` : '') +

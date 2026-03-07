@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const pagination_1 = require("../common/utils/pagination");
 let NotificationsService = NotificationsService_1 = class NotificationsService {
     prisma;
     logger = new common_1.Logger(NotificationsService_1.name);
@@ -20,7 +21,8 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.prisma = prisma;
     }
     async findForUser(userId, options) {
-        const { page, limit, unreadOnly } = options;
+        const { page, unreadOnly } = options;
+        const limit = (0, pagination_1.clampLimit)(options.limit);
         const skip = (page - 1) * limit;
         const where = {
             userId,

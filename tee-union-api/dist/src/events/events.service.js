@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_dispatcher_service_1 = require("../notifications/notification-dispatcher.service");
 const client_1 = require("@prisma/client");
+const pagination_1 = require("../common/utils/pagination");
 let EventsService = EventsService_1 = class EventsService {
     prisma;
     dispatcher;
@@ -23,7 +24,8 @@ let EventsService = EventsService_1 = class EventsService {
         this.prisma = prisma;
         this.dispatcher = dispatcher;
     }
-    async findAll(districtId, page = 1, limit = 20) {
+    async findAll(districtId, page = 1, requestedLimit = 20) {
+        const limit = (0, pagination_1.clampLimit)(requestedLimit);
         const skip = (page - 1) * limit;
         const where = {
             isPublished: true,

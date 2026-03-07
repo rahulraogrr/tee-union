@@ -5,7 +5,7 @@ export declare class EventsService {
     private dispatcher;
     private readonly logger;
     constructor(prisma: PrismaService, dispatcher: NotificationDispatcherService);
-    findAll(districtId?: string, page?: number, limit?: number): Promise<{
+    findAll(districtId?: string, page?: number, requestedLimit?: number): Promise<{
         data: {
             district: {
                 name: string;
